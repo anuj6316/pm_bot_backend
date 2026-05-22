@@ -1,0 +1,83 @@
+networks:
+  pm_bot_network:
+    driver: bridge
+
+volumes:
+  redis_data: {}
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  redis:
+    image: redis/redis-stack
+    restart: on-failure
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "127.0.0.1:8005:8001"
+    networks:
+      - pm_bot_network
+    logging: *default-logging
+  django-web:
+    build: ./backend
+    restart: on-failure
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "python manage.py migrate --noinput && 
+             python manage.py collectstatic --noinput && 
+             daphne -b 0.0.0.0 -p 8000 backend.asgi:application"
+
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/admin" ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "8002:8000"
+    networks:
+      - pm_bot_network
+    logging: *default-logging
+
+  celery-worker:
+    build: ./backend
+    restart: on-failure
+    volumes:
+      - ./backend:/app
+    command: [ "uv", "run", "celery", "-A", "backend", "worker", "--loglevel=info" ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - pm_bot_network
+    logging: *default-logging
+
+  celery-beat:
+    build: ./backend
+    restart: on-failure
+    volumes:
+      - ./backend:/app
+    command: [ "uv", "run", "celery", "-A", "backend", "beat", "--loglevel=info" ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - pm_bot_network
+    logging: *default-logging

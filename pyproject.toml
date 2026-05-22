@@ -1,0 +1,35 @@
+[project]
+name = "pm-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "celery>=5.6.3",
+    "django>=6.0.4",
+    "django-celery-results>=2.6.0",
+    "django-cors-headers>=4.9.0",
+    "djangorestframework>=3.17.1",
+    "djangorestframework-simplejwt>=5.5.1",
+    "langchain>=1.2.15",
+    "langfuse>=4.0.6",
+    "langgraph>=1.1.6",
+    "litellm>=1.83.4",
+    "psycopg[binary]>=3.3.3",
+    "python-dotenv>=1.0.1",
+    "redis>=7.4.0",
+    "smolagents>=1.24.0",
+    "typer>=0.23.1",
+    "rich>=13.0.0",
+    "httpx>=0.28.0",
+    "pytest>=8.0.0",
+    "pytest-django>=4.8.0",
+    "pytest-asyncio>=0.23.0",
+    "dj-database-url>=3.1.2",
+]
+
+[project.scripts]
+pm-bot = "cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cli", "backend", "deep_agent", "plane_client"]
