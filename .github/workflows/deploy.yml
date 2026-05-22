@@ -14,7 +14,9 @@ jobs:
           fetch-depth: 0
 
       - name: Sync to Hugging Face Space
-        uses: huggingface/hub-sync@v1
+        uses: huggingface/hub-sync@v0.1.0
         with:
-          hf_space: anuj6316/pm_bot_backend
+          github_repo_id: ${{ github.repository }}
+          huggingface_repo_id: anuj6316/pm_bot_backend
           hf_token: ${{ secrets.HF_TOKEN }}
+          repo_type: space
