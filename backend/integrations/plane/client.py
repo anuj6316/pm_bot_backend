@@ -259,8 +259,20 @@ class PlaneClient:
             Created comment data.
         """
         endpoint = f"/api/v1/workspaces/{self.workspace_slug}/projects/{project_id}/issues/{issue_id}/comments/"
+        # Plane expects comment_json to be a ProseMirror-compatible document structure
+        # Format: {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "..."}]}]}
         data = {
-            "comment_json": {"content": comment_text},
+            "comment_json": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {"type": "text", "text": comment_text}
+                        ]
+                    }
+                ]
+            },
             "comment_html": f"<p>{comment_text}</p>",
         }
         return self._request("POST", endpoint, data=data)

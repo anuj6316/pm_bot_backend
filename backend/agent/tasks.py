@@ -1,6 +1,5 @@
 import logging
 
-import mlflow
 from celery import shared_task
 from integrations.plane.client import PlaneClient
 
@@ -11,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(name="agent.tasks.poll_plane_issues")
-@mlflow.trace(name="poll_plane_issues")
 def poll_plane_issues():
     """
     Periodic task to poll Plane for new/unprocessed issues.
@@ -78,8 +76,8 @@ def poll_plane_issues():
                         session.triage_label = result.get(
                             "category", "QUESTION"
                         ).upper()
-                        # Store only the draft response in error_log for review
-                        session.error_log = result.get("draft_response", "")
+                        # Store only the draft response in draft_response field for review
+                        session.draft_response = result.get("draft_response", "")
                         session.thread_id = "test-thread"
 
                     session.save()
@@ -98,7 +96,6 @@ def poll_plane_issues():
 
 
 @shared_task(name="agent.tasks.process_approved_session")
-@mlflow.trace(name="process_approved_session")
 def process_approved_session(session_id):
     """
     Final integration task: Posts the approved comment and adds labels to Plane.
@@ -174,8 +171,8 @@ def process_approved_session(session_id):
         # 3. Attach Label
         client.add_label_to_issue(target_project_id, session.plane_issue_id, [label_id])
 
-        # 4. Post Comment
-        client.add_comment(target_project_id, session.plane_issue_id, session.error_log)
+        # 4. Post Comment - use draft_response instead of error_log
+        client.add_comment(target_project_id, session.plane_issue_id, session.draft_response or "")
 
         # 5. Finalize
         session.status = "ARCHIVED"

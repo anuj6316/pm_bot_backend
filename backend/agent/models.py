@@ -8,6 +8,7 @@ class AgentIssueSession(models.Model):
         ("PROCESSING", "Processing"),
         ("COMPLETED", "Completed"),
         ("FAILED", "Failed"),
+        ("ARCHIVED", "Archived"),
     ]
 
     plane_issue_id = models.CharField(max_length=255, unique=True, db_index=True)
@@ -17,6 +18,7 @@ class AgentIssueSession(models.Model):
     is_approved = models.BooleanField(default=False)
     thread_id = models.CharField(max_length=255, blank=True, null=True)
     error_log = models.TextField(blank=True, null=True)
+    draft_response = models.TextField(blank=True, null=True, help_text="Stores the AI's draft response for review")
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
