@@ -39,6 +39,9 @@ class User(AbstractUser):
 
     def get_allowed_projects(self) -> list[str]:
         """Return the list of project IDs this user is authorized to interact with."""
+        # Admin/Consultant/Superuser have access to ALL projects (None means no filtering)
+        if self.role in [self.Role.ADMIN, self.Role.CONSULTANT] or self.is_superuser:
+            return None
         return self.projects or []
 
 

@@ -27,6 +27,11 @@ class UserViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        return User.objects.all()
+
     def get_serializer_class(self):
         if self.action == "change_password":
             return ChangePasswordSerializer
@@ -35,136 +40,6 @@ class UserViewSet(viewsets.ViewSet):
         if self.action == "create_user":
             return UserCreateSerializer
         return UserProfileSerializer
-
-    @extend_schema(
-        summary="List user projects",
-        description="Returns projects from Plane that the user has access to. Admins/Consultants see all projects.",
-        responses={200: ProjectSerializer(many=True)},
-    )
-    @action(detail=False, methods=["get"], url_path="projects")
-    def projects(self, request):
-        """GET /api/v1/user/projects/ - List projects user has access to"""
-        from integrations.plane.client import PlaneClient
-
-        try:
-            plane = PlaneClient()
-            plane_res = plane.list_projects() or []
-
-            # Handle Plane pagination
-            if isinstance(plane_res, dict) and "results" in plane_res:
-                all_projects = plane_res["results"]
-            elif isinstance(plane_res, list):
-                all_projects = plane_res
-            else:
-                all_projects = []
-
-            # For developers, filter by their assigned projects
-            if request.user.role in ["developer"] and not request.user.is_superuser:
-                allowed_ids = request.user.get_allowed_projects()
-
-                logger.info(
-                    "Project filtering: user=%s role=%s is_superuser=%s allowed_ids=%s",
-                    request.user.email,
-                    request.user.role,
-                    request.user.is_superuser,
-                    allowed_ids,
-                )
-                logger.debug("Total projects from Plane API: %d", len(all_projects))
-
-                # Log first 3 projects as sample
-                for i, p in enumerate(all_projects[:3]):
-                    logger.debug(
-                        "Plane project[%d]: id=%s identifier=%s name=%s",
-                        i,
-                        p.get("id"),
-                        p.get("identifier"),
-                        p.get("name"),
-                    )
-
-                filtered_projects = [
-                    p
-                    for p in all_projects
-                    if str(p.get("id", "")).lower()
-                    in [str(aid).lower() for aid in allowed_ids]
-                ]
-
-                logger.info(
-                    "Filtered projects: %d (from %d total)",
-                    len(filtered_projects),
-                    len(all_projects),
-                )
-
-                for p in filtered_projects:
-                    logger.info(
-                        "  → Including: id=%s name=%s", p.get("id"), p.get("name")
-                    )
-
-                return Response(
-                    {"msg": "Projects fetched successfully", "data": filtered_projects}
-                )
-
-            # Admins and Consultants see all projects
-            return Response(
-                {"msg": "Projects fetched successfully", "data": all_projects}
-            )
-
-        except Exception as e:
-            return Response(
-                {"msg": "Failed to fetch projects", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    @extend_schema(
-        summary="Set selected project",
-        description="Store the user's currently selected project in their profile.",
-        request=SelectedProjectSerializer,
-        responses={200: OpenApiTypes.OBJECT},
-    )
-    @action(detail=False, methods=["post"], url_path="set-selected-project")
-    def set_selected_project(self, request):
-        """POST /api/v1/user/set-selected-project/ - Set user's selected project"""
-        serializer = SelectedProjectSerializer(data=request.data)
-        if serializer.is_valid():
-            project_id = serializer.validated_data.get("project_id")
-
-            # Verify user has access to this project
-            if not request.user.has_project_access(project_id):
-                return Response(
-                    {"msg": "You don't have access to this project"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-
-            request.user.selected_project = project_id
-            request.user.save(update_fields=["selected_project"])
-            return Response({"msg": "Selected project updated successfully"})
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class UserAPIKeyViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing user API keys.
-    """
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserAPIKeySerializer
-
-    def get_queryset(self):
-        from .models import UserAPIKey
-        return UserAPIKey.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        from .models import UserAPIKey
-        # Update if already exists for this provider
-        provider = serializer.validated_data.get('provider')
-        existing = UserAPIKey.objects.filter(user=self.request.user, provider=provider).first()
-        if existing:
-            serializer.instance = existing
-        serializer.save(user=self.request.user)
-
-    @action(detail=False, methods=['get'])
-    def providers(self, request):
-        """List available providers for API keys"""
-        from .models import UserAPIKey
-        return Response([{"id": c[0], "label": c[1]} for c in UserAPIKey.Provider.choices])
 
     def list(self, request):
         """GET /api/v1/user/ - Get current user profile"""
@@ -356,3 +231,133 @@ class UserAPIKeyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        summary="List user projects",
+        description="Returns projects from Plane that the user has access to. Admins/Consultants see all projects.",
+        responses={200: ProjectSerializer(many=True)},
+    )
+    @action(detail=False, methods=["get"], url_path="projects")
+    def projects(self, request):
+        """GET /api/v1/user/projects/ - List projects user has access to"""
+        from integrations.plane.client import PlaneClient
+
+        try:
+            plane = PlaneClient()
+            plane_res = plane.list_projects() or []
+
+            # Handle Plane pagination
+            if isinstance(plane_res, dict) and "results" in plane_res:
+                all_projects = plane_res["results"]
+            elif isinstance(plane_res, list):
+                all_projects = plane_res
+            else:
+                all_projects = []
+
+            # For developers, filter by their assigned projects
+            if request.user.role in ["developer"] and not request.user.is_superuser:
+                allowed_ids = request.user.get_allowed_projects()
+
+                logger.info(
+                    "Project filtering: user=%s role=%s is_superuser=%s allowed_ids=%s",
+                    request.user.email,
+                    request.user.role,
+                    request.user.is_superuser,
+                    allowed_ids,
+                )
+                logger.debug("Total projects from Plane API: %d", len(all_projects))
+
+                # Log first 3 projects as sample
+                for i, p in enumerate(all_projects[:3]):
+                    logger.debug(
+                        "Plane project[%d]: id=%s identifier=%s name=%s",
+                        i,
+                        p.get("id"),
+                        p.get("identifier"),
+                        p.get("name"),
+                    )
+
+                filtered_projects = [
+                    p
+                    for p in all_projects
+                    if str(p.get("id", "")).lower()
+                    in [str(aid).lower() for aid in allowed_ids]
+                ]
+
+                logger.info(
+                    "Filtered projects: %d (from %d total)",
+                    len(filtered_projects),
+                    len(all_projects),
+                )
+
+                for p in filtered_projects:
+                    logger.info(
+                        "  → Including: id=%s name=%s", p.get("id"), p.get("name")
+                    )
+
+                return Response(
+                    {"msg": "Projects fetched successfully", "data": filtered_projects}
+                )
+
+            # Admins and Consultants see all projects
+            return Response(
+                {"msg": "Projects fetched successfully", "data": all_projects}
+            )
+
+        except Exception as e:
+            return Response(
+                {"msg": "Failed to fetch projects", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @extend_schema(
+        summary="Set selected project",
+        description="Store the user's currently selected project in their profile.",
+        request=SelectedProjectSerializer,
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=["post"], url_path="set-selected-project")
+    def set_selected_project(self, request):
+        """POST /api/v1/user/set-selected-project/ - Set user's selected project"""
+        serializer = SelectedProjectSerializer(data=request.data)
+        if serializer.is_valid():
+            project_id = serializer.validated_data.get("project_id")
+
+            # Verify user has access to this project
+            if not request.user.has_project_access(project_id):
+                return Response(
+                    {"msg": "You don't have access to this project"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            request.user.selected_project = project_id
+            request.user.save(update_fields=["selected_project"])
+            return Response({"msg": "Selected project updated successfully"})
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UserAPIKeyViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing user API keys.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserAPIKeySerializer
+
+    def get_queryset(self):
+        from .models import UserAPIKey
+        return UserAPIKey.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        from .models import UserAPIKey
+        # Update if already exists for this provider
+        provider = serializer.validated_data.get('provider')
+        existing = UserAPIKey.objects.filter(user=self.request.user, provider=provider).first()
+        if existing:
+            serializer.instance = existing
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def providers(self, request):
+        """List available providers for API keys"""
+        from .models import UserAPIKey
+        return Response([{"id": c[0], "label": c[1]} for c in UserAPIKey.Provider.choices])

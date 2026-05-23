@@ -74,10 +74,17 @@ def create_chat_agent(model_name: str | None = None, user_id: int | None = None)
     if user_id:
         try:
             from authentication.models import UserAPIKey
+            from channels.db import database_sync_to_async
+            from asgiref.sync import async_to_sync
+            
             provider = resolved_model.split('/')[0].capitalize()
             if provider == 'Gemini': provider = 'Google' # Map gemini/ prefix to Google provider
             
-            ukey = UserAPIKey.objects.filter(user_id=user_id, provider=provider).first()
+            # Use sync_to_async wrapper for ORM call in async context
+            def _get_api_key():
+                return UserAPIKey.objects.filter(user_id=user_id, provider=provider).first()
+            
+            ukey = async_to_sync(database_sync_to_async(_get_api_key))()
             if ukey:
                 logger.info(f"Using user-provided API key for {provider}")
                 if provider == 'OpenAI': extra_kwargs['openai_api_key'] = ukey.api_key

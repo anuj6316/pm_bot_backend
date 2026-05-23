@@ -29,9 +29,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-FERNET_KEYS = [os.getenv("FERNET_KEY")]
+FERNET_KEYS_ENV = os.getenv("FERNET_KEY")
+if not FERNET_KEYS_ENV:
+    raise ValueError(
+        "FERNET_KEY environment variable is not set. "
+        "Generate one with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'"
+    )
+FERNET_KEYS = [FERNET_KEYS_ENV]
 
 ALLOWED_HOSTS = ["*"]
 
@@ -167,7 +173,10 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 ## Celery
 # The broker is Redis — where Django pushes tasks and Celery pulls from
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+# Celery and Redis configuration
+# Use REDIS_HOST env var if set (for supervisord/HF Spaces), otherwise default to 'redis' for docker-compose
+_REDIS_HOST = os.getenv("REDIS_HOST", "localhost" if os.path.exists("/.dockerenv") is False else "redis")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", f"redis://{_REDIS_HOST}:6379/0")
 
 # The result backend — where Celery stores task status and return values
 # 'django-db' means results are stored in PostgreSQL via django_celery_results
@@ -247,7 +256,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv("REDIS_HOST", "redis"), 6379)],
+            "hosts": [(_REDIS_HOST, 6379)],
         },
     }
 }
