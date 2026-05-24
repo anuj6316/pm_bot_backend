@@ -6,7 +6,7 @@ Specialized for single-turn system queries using DB + Plane tools.
 import os
 import logging
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_community.chat_models import ChatLiteLLM
+from langchain_litellm import ChatLiteLLM
 from langgraph.prebuilt import create_react_agent
 
 from .tools import PLANE_TOOLS

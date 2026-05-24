@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any
 
-from langchain_community.chat_models import ChatLiteLLM
+from langchain_litellm import ChatLiteLLM
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from .prompts import SYSTEM_PROMPTS

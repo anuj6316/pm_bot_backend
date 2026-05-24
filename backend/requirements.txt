@@ -1067,3 +1067,4 @@ zstandard==0.25.0 \
     --hash=sha256:f604efd28f239cc21b3adb53eb061e2a205dc164be408e553b41ba2ffe0ca15c \
     --hash=sha256:f67e8f1a324a900e75b5e28ffb152bcac9fbed1cc7b43f99cd90f395c4375344
     # via langsmith
+langchain-litellm
