@@ -140,11 +140,33 @@ Key environment variables to configure in `.env`:
 - `LANGFUSE_PUBLIC_KEY`: Langfuse public key for monitoring
 - `LANGFUSE_SECRET_KEY`: Langfuse secret key for monitoring
 
-## API Documentation
+## API & Admin Documentation
 
-Once running, access the API documentation at:
-- Browsable API: http://localhost:8002/api/
-- Admin Interface: http://localhost:8002/admin/
+You can access the backend interfaces and API documentation directly using the URLs below.
+
+### 🌐 Hugging Face Spaces (Live Production)
+
+| Service / Interface | URL | Description |
+| :--- | :--- | :--- |
+| **🛡️ Django Admin** | [https://anuj6316-pm-bot-backend.hf.space/admin/](https://anuj6316-pm-bot-backend.hf.space/admin/) | Manage models, sessions, and authentication keys |
+| **📖 Swagger UI Docs** | [https://anuj6316-pm-bot-backend.hf.space/api/v1/docs/](https://anuj6316-pm-bot-backend.hf.space/api/v1/docs/) | Interactive OpenAPI documentation for all endpoints |
+| **📕 Redoc UI Docs** | [https://anuj6316-pm-bot-backend.hf.space/api/v1/redoc/](https://anuj6316-pm-bot-backend.hf.space/api/v1/redoc/) | Clean, documentation-focused API reference |
+| **📡 Browsable API** | [https://anuj6316-pm-bot-backend.hf.space/api/v1/](https://anuj6316-pm-bot-backend.hf.space/api/v1/) | DRF browsable API root |
+| **📄 OpenAPI Schema** | [https://anuj6316-pm-bot-backend.hf.space/api/v1/schema/](https://anuj6316-pm-bot-backend.hf.space/api/v1/schema/) | Raw OpenAPI 3.0 specification (JSON) |
+
+---
+
+### 💻 Local Development
+
+*Default local port is `8002` if running via Docker Compose, or `8000` if running `manage.py runserver` directly.*
+
+| Service / Interface | Local Docker URL (`8002`) | Local Dev Server URL (`8000`) |
+| :--- | :--- | :--- |
+| **🛡️ Django Admin** | [http://localhost:8002/admin/](http://localhost:8002/admin/) | [http://localhost:8000/admin/](http://localhost:8000/admin/) |
+| **📖 Swagger UI Docs** | [http://localhost:8002/api/v1/docs/](http://localhost:8002/api/v1/docs/) | [http://localhost:8000/api/v1/docs/](http://localhost:8000/api/v1/docs/) |
+| **📕 Redoc UI Docs** | [http://localhost:8002/api/v1/redoc/](http://localhost:8002/api/v1/redoc/) | [http://localhost:8000/api/v1/redoc/](http://localhost:8000/api/v1/redoc/) |
+| **📡 Browsable API** | [http://localhost:8002/api/v1/](http://localhost:8002/api/v1/) | [http://localhost:8000/api/v1/](http://localhost:8000/api/v1/) |
+| **📄 OpenAPI Schema** | [http://localhost:8002/api/v1/schema/](http://localhost:8002/api/v1/schema/) | [http://localhost:8000/api/v1/schema/](http://localhost:8000/api/v1/schema/) |
 
 ## Testing
 

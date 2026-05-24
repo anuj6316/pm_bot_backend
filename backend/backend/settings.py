@@ -333,23 +333,23 @@ LOGGING = {
 }
 
 ## Printing the ENV from prod
-target_keys = [
-    "PLANE_BASE_URL",
-    "PLANE_WORKSPACE_SLUG",
-    "PLANE_API_KEY",
-    "DATABASE_URL",
-    "REDIS_URL",
-    "CELERY_BROKER_URL",
-    "CELERY_BROKER_URL",
-    "DJANGO_SECRET_KEY",
-    "DJANGO_SUPERUSER_EMAIL",
-    "DJANGO_SUPERUSER_USERNAME",
-    "DJANGO_SUPERUSER_PASSWORD",
-]
-import os
-print("--- BEGIN ENV EXPORT ---\n")
-for key in target_keys:
-    val = os.getenv(key)
-    if val:
-        print(f"{key}={val}")
-print("--- END ENV EXPORT ---\n")
+# target_keys = [
+#     "PLANE_BASE_URL",
+#     "PLANE_WORKSPACE_SLUG",
+#     "PLANE_API_KEY",
+#     "DATABASE_URL",
+#     "REDIS_URL",
+#     "CELERY_BROKER_URL",
+#     "CELERY_BROKER_URL",
+#     "DJANGO_SECRET_KEY",
+#     "DJANGO_SUPERUSER_EMAIL",
+#     "DJANGO_SUPERUSER_USERNAME",
+#     "DJANGO_SUPERUSER_PASSWORD",
+# ]
+# import os
+# print("--- BEGIN ENV EXPORT ---\n")
+# for key in target_keys:
+#     val = os.getenv(key)
+#     if val:
+#         print(f"{key}={val}")
+# print("--- END ENV EXPORT ---\n")
